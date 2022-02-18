@@ -2,6 +2,8 @@
 // Copyright 2019 The evmone Authors.
 // SPDX-License-Identifier: Apache-2.0
 
+#include <eosio/eosio.hpp>
+
 #include "analysis.hpp"
 #include "opcodes_helpers.h"
 #include <cassert>
@@ -175,7 +177,7 @@ AdvancedCodeAnalysis analyze(evmc_revision rev, const uint8_t* code, size_t code
     // FIXME: assert(analysis.instrs.size() <= max_instrs_size);
 
     // Make sure the push_values has not been reallocated. Otherwise iterators are invalid.
-    assert(analysis.push_values.size() <= max_args_storage_size);
+    eosio::check(analysis.push_values.size() <= max_args_storage_size, "reallocated");
 
     return analysis;
 }

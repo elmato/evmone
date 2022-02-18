@@ -5,12 +5,14 @@
 /// @file
 /// EVMC instance (class VM) and entry point of evmone is defined here.
 
+#include <eosio/eosio.hpp>
+
 #include "vm.hpp"
 #include "baseline.hpp"
 #include "execution.hpp"
 #include <evmone/evmone.h>
 #include <cassert>
-#include <iostream>
+//#include <iostream>
 
 namespace evmone
 {
@@ -18,7 +20,7 @@ namespace
 {
 void destroy(evmc_vm* vm) noexcept
 {
-    assert(vm != nullptr);
+    eosio::check(vm != nullptr, "vm != nullptr");
     delete static_cast<VM*>(vm);
 }
 
@@ -47,16 +49,6 @@ evmc_set_option_result set_option(evmc_vm* c_vm, char const* c_name, char const*
         }
         return EVMC_SET_OPTION_INVALID_VALUE;
     }
-    else if (name == "trace")
-    {
-        vm.add_tracer(create_instruction_tracer(std::cerr));
-        return EVMC_SET_OPTION_SUCCESS;
-    }
-    else if (name == "histogram")
-    {
-        vm.add_tracer(create_histogram_tracer(std::cerr));
-        return EVMC_SET_OPTION_SUCCESS;
-    }
     return EVMC_SET_OPTION_INVALID_NAME;
 }
 
@@ -67,7 +59,7 @@ inline constexpr VM::VM() noexcept
   : evmc_vm{
         EVMC_ABI_VERSION,
         "evmone",
-        PROJECT_VERSION,
+        "X",
         evmone::destroy,
         evmone::execute,
         evmone::get_capabilities,

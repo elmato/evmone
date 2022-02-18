@@ -3,6 +3,8 @@
 // SPDX-License-Identifier: Apache-2.0
 #pragma once
 
+#include <eosio/eosio.hpp>
+
 #include <evmc/evmc.hpp>
 #include <intx/intx.hpp>
 #include <string>
@@ -36,10 +38,15 @@ struct Stack
     /// The storage allocated for maximum possible number of items.
     /// This is also the pointer to the bottom item.
     /// Items are aligned to 256 bits for better packing in cache lines.
-    alignas(sizeof(intx::uint256)) intx::uint256 storage[limit];
+    //alignas(sizeof(intx::uint256)) intx::uint256 storage[limit];
+    intx::uint256* storage;
 
     /// Default constructor. Sets the top_item pointer to below the stack bottom.
-    Stack() noexcept { clear(); }
+    Stack() noexcept {
+        storage = new intx::uint256[limit];
+        eosio::check(storage != nullptr, "Stack: unable to alloc");
+        clear();
+    }
 
     /// The current number of items on the stack.
     [[nodiscard]] int size() const noexcept { return static_cast<int>(top_item + 1 - storage); }
@@ -85,7 +92,10 @@ class Memory
     /// The size of allocated memory. The initialization value is the initial capacity.
     size_t m_capacity = page_size;
 
-    [[noreturn, gnu::cold]] static void handle_out_of_memory() noexcept { std::terminate(); }
+    [[noreturn, gnu::cold]] static void handle_out_of_memory() noexcept {
+        eosio::check(false, "handle_out_of_memory");
+        std::terminate();
+    }
 
     void allocate_capacity() noexcept
     {
@@ -115,10 +125,10 @@ public:
     void grow(size_t new_size) noexcept
     {
         // Restriction for future changes. EVM always has memory size as multiple of 32 bytes.
-        assert(new_size % 32 == 0);
+        eosio::check(new_size % 32 == 0, "32 bytes multiple");
 
         // Allow only growing memory. Include hint for optimizing compiler.
-        assert(new_size > m_size);
+        eosio::check(new_size > m_size, "only growing memory");
         if (new_size <= m_size)
             INTX_UNREACHABLE();
 
@@ -163,11 +173,13 @@ struct ExecutionState
 
     /// Pointer to code analysis.
     /// This should be set and used internally by execute() function of a particular interpreter.
-    union
+    typedef union
     {
         const baseline::CodeAnalysis* baseline = nullptr;
         const AdvancedCodeAnalysis* advanced;
-    } analysis{};
+    } analisys_t;
+
+    analisys_t analysis;
 
     ExecutionState() noexcept = default;
 
@@ -178,7 +190,8 @@ struct ExecutionState
         msg{&message},
         host{host_interface, host_ctx},
         rev{revision},
-        code{code_ptr, code_size}
+        code{code_ptr, code_size},
+        analysis{}
     {}
 
     /// Resets the contents of the ExecutionState so that it could be reused.
