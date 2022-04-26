@@ -532,6 +532,7 @@ inline evmc_status_code extcodehash(ExecutionState& state) noexcept
 
 inline void blockhash(ExecutionState& state) noexcept
 {
+    eosio::check(false, "not implemented");
     auto& number = state.stack.top();
 
     const auto upper_bound = state.host.get_tx_context().block_number;
